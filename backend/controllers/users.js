@@ -16,6 +16,9 @@ const signUp = async (req, res, next) => {
     if (!email) throw new FieldRequiredError(`An email`);
     if (!password) throw new FieldRequiredError(`A password`);
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) throw new ValidationError("Invalid email format");
+
     const userExists = await User.findOne({
       where: { email: req.body.user.email },
     });
@@ -41,6 +44,9 @@ const signUp = async (req, res, next) => {
 const signIn = async (req, res, next) => {
   try {
     const { user } = req.body;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(user.email)) throw new ValidationError("Invalid email format");
 
     const existentUser = await User.findOne({ where: { email: user.email } });
     if (!existentUser) throw new NotFoundError("Email", "sign in first");
