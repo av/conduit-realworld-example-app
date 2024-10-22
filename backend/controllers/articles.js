@@ -47,6 +47,7 @@ const allArticles = async (req, res, next) => {
     let articles = { rows: [], count: 0 };
     if (favorited) {
       const user = await User.findOne({ where: { username: favorited } });
+      if (!user) throw new NotFoundError("User");
 
       articles.rows = await user.getFavorites(searchOptions);
       articles.count = await user.countFavorites();
@@ -92,17 +93,17 @@ const createArticle = async (req, res, next) => {
       body: body,
     });
 
-    for (const tag of tagList) {
+    const tagPromises = tagList.map(async (tag) => {
       const tagInDB = await Tag.findByPk(tag.trim());
-
       if (tagInDB) {
-        await article.addTagList(tagInDB);
+        return article.addTagList(tagInDB);
       } else if (tag.length > 2) {
         const newTag = await Tag.create({ name: tag.trim() });
-
-        await article.addTagList(newTag);
+        return article.addTagList(newTag);
       }
-    }
+    });
+
+    await Promise.all(tagPromises);
 
     delete loggedUser.dataValues.token;
 
